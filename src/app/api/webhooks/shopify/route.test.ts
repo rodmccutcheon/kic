@@ -2,6 +2,25 @@ import { describe, expect, it } from "vitest";
 import { NextRequest } from "next/server";
 import { POST } from "./route";
 
+const validPayload = {
+  id: "shopify_order_001",
+  shopify_customer_id: "cust_shopify_001",
+  email: "jane.doe@example.com",
+  phone: "+61412345678",
+  device_id: "device_abc123",
+  created_at: "2024-11-01T10:00:00Z",
+  total_price: "89.00",
+  line_items: [{ title: "KIC Resistance Band", quantity: 1 }],
+};
+
+function makeRequest(body: unknown) {
+  return new NextRequest("http://localhost/api/webhooks/shopify", {
+    method: "POST",
+    body: JSON.stringify(body),
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
 describe("POST /api/webhooks/mindbody", () => {
   it("returns 400 when body is not valid JSON", async () => {
     const req = new NextRequest("http://localhost/api/webhooks/mindbody", {
@@ -12,5 +31,24 @@ describe("POST /api/webhooks/mindbody", () => {
     const res = await POST(req);
     expect(res.status).toBe(400);
     expect(await res.json()).toMatchObject({error: "Invalid JSON"});
+  });
+
+  it("returns 400 when id is missing", async () => {
+    const { id: _, ...noId } = validPayload;
+    const res = await POST(makeRequest(noId));
+    expect(res.status).toBe(400);
+    expect(await res.json()).toMatchObject({ error: "Missing required fields" });
+  });
+
+  it("returns 400 when shopify_customer_id is missing", async () => {
+    const { shopify_customer_id: _, ...noCustomerId } = validPayload;
+    const res = await POST(makeRequest(noCustomerId));
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 400 when created_at is missing", async () => {
+    const { shopify_customer_id: _, ...noDate } = validPayload;
+    const res = await POST(makeRequest(noDate));
+    expect(res.status).toBe(400);
   });
 });

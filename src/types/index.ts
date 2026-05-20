@@ -26,3 +26,14 @@ export interface MindbodyBookingPayload {
     scheduled_at: string;
     studio?: string;
 }
+
+export interface ShopifyOrderPayload {
+    id: string;
+    shopify_customer_id: string | null;
+    email: string | null;
+    phone: string | null;
+    device_id: string | null;
+    created_at: string;
+    total_price?: string;
+    line_items?: { title: string; quantity: number }[];
+}
