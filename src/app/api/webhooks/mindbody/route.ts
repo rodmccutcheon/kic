@@ -21,7 +21,11 @@ export async function POST(req: NextRequest) {
   if (body.client_email) signals.push({ type: "email", value: body.client_email });
   if (body.phone) signals.push({ type: "phone", value: body.phone });
 
-  await resolveIdentity(signals);
+  try {
+    await resolveIdentity(signals);
+  } catch (err) {
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 
   return NextResponse.json({ received: true });
 }
