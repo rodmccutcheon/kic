@@ -7,7 +7,7 @@ export async function ingestEvent(signals: RawSignal[], descriptor: EventDescrip
     const existing = await tx.event.findUnique({ where: { externalId: descriptor.externalId } });
     if (existing) return;
 
-    const customerId = await resolveIdentity(signals);
+    const customerId = await resolveIdentity(tx, signals);
 
     const event = await tx.event.create({
       data: {
