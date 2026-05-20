@@ -53,6 +53,7 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({
     id: customer.id,
+    createdAt: customer.createdAt,
     signals: customer.customerSignals.map((cs) => cs.signal),
     events: customer.events
       .map((ce) => ce.event)
