@@ -56,9 +56,11 @@ model MergeRecord {
   canonical   Customer @relation("CanonicalMerges", fields: [canonicalId], references: [id])
   absorbedId  String
   absorbed    Customer @relation("AbsorbedMerges", fields: [absorbedId], references: [id])
-  signals     String   // JSON of incoming signals that triggered the merge
-  confidence  String   @default("deterministic") // "deterministic" | "probabilistic"
-  createdAt   DateTime @default(now())
+  signals         String   // JSON of incoming signals that triggered the merge
+  copiedSignalIds String   @default("[]") // JSON array of signalIds copied to canonical
+  copiedEventIds  String   @default("[]") // JSON array of eventIds copied to canonical
+  confidence      String   @default("deterministic") // "deterministic" | "probabilistic"
+  createdAt       DateTime @default(now())
 }
 
 model CustomerSignal {

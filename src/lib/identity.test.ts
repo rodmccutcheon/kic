@@ -118,6 +118,8 @@ describe("resolveIdentity", () => {
         canonicalId: "cust_a",
         absorbedId: "cust_b",
         signals: JSON.stringify(signals),
+        copiedSignalIds: "[]",
+        copiedEventIds: "[]",
         confidence: "deterministic",
       },
     });

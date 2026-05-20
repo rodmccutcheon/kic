@@ -62,6 +62,8 @@ async function mergeIntoCanonical(tx: TxClient, canonical: string, absorbed: str
           canonicalId: canonical,
           absorbedId,
           signals: JSON.stringify(signals),
+          copiedSignalIds: JSON.stringify(signalsToLink.map((s) => s.signalId)),
+          copiedEventIds: JSON.stringify(eventsToLink.map((e) => e.eventId)),
           confidence: "deterministic",
         },
       })
