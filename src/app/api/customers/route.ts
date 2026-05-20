@@ -51,5 +51,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "No customer found" }, { status: 404 });
   }
 
-  return NextResponse.json({ customers: [] });
+  return NextResponse.json({
+    ...customer,
+    signals: customer.customerSignals.map((cs) => cs.signal),
+    events: customer.events
+        .map((ce) => ce.event)
+        .sort((a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime()),
+  });
 }
