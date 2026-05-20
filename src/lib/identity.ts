@@ -46,6 +46,15 @@ async function mergeIntoCanonical(tx: TxClient, canonical: string, absorbed: str
     data: signalsToLink.map((s) => ({ signalId: s.signalId, customerId: canonical })),
   });
 
+  const eventsToLink = await tx.customerEvent.findMany({
+    where: { customerId: { in: absorbed } },
+    select: { eventId: true },
+  });
+
+  await tx.customerEvent.createMany({
+    data: eventsToLink.map((e) => ({ eventId: e.eventId, customerId: canonical })),
+  });
+
   await Promise.all(
     absorbed.map((absorbedId) =>
       tx.mergeRecord.create({

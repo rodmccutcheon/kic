@@ -18,6 +18,10 @@ const makeTx = ({
     findMany: vi.fn().mockResolvedValue(customerLinks),
     createMany: vi.fn().mockResolvedValue({}),
   },
+  customerEvent: {
+    findMany: vi.fn().mockResolvedValue([]),
+    createMany: vi.fn().mockResolvedValue({}),
+  },
   mergeRecord: {
     create: vi.fn().mockResolvedValue({}),
   },
@@ -116,6 +120,21 @@ describe("resolveIdentity", () => {
         signals: JSON.stringify(signals),
         confidence: "deterministic",
       },
+    });
+  });
+
+  it("copies the absorbed customer's events to the canonical on merge", async () => {
+    const tx = makeTx({ matchingSignals: [{ id: "sig_001" }] });
+    tx.customerSignal.findMany
+      .mockResolvedValueOnce([{ customerId: "cust_b" }, { customerId: "cust_a" }])
+      .mockResolvedValueOnce([]);
+    tx.customerEvent.findMany
+      .mockResolvedValueOnce([{ eventId: "evt_001" }]);
+
+    await resolveIdentity(tx as never, signals);
+
+    expect(tx.customerEvent.createMany).toHaveBeenCalledWith({
+      data: [{ eventId: "evt_001", customerId: "cust_a" }],
     });
   });
 
