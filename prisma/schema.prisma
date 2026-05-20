@@ -8,15 +8,27 @@ generator client {
 }
 
 model Customer {
-  id String @id @default(cuid())
+  id     String          @id @default(cuid())
+  events CustomerEvent[]
 }
 
 model Event {
-  id         String   @id @default(cuid())
-  source     String // "shopify" | "mindbody"
-  type       String // "order.created" | "booking.created"
-  externalId String   @unique
-  payload    String // raw JSON
-  occurredAt DateTime
+  id             String          @id @default(cuid())
+  source         String // "shopify" | "mindbody"
+  type           String // "order.created" | "booking.created"
+  externalId     String          @unique
+  payload        String // raw JSON
+  occurredAt     DateTime
+  createdAt      DateTime        @default(now())
+  customerEvents CustomerEvent[]
+}
+
+model CustomerEvent {
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
+  eventId    String
+  event      Event    @relation(fields: [eventId], references: [id])
   createdAt  DateTime @default(now())
+
+  @@id([customerId, eventId])
 }
