@@ -12,6 +12,7 @@ const makeTx = ({
   identitySignal: {
     findMany: vi.fn().mockResolvedValue(matchingSignals),
     createMany: vi.fn().mockResolvedValue({}),
+    upsert: vi.fn().mockResolvedValue({ id: "sig_new" }),
   },
   customerSignal: {
     findMany: vi.fn().mockResolvedValue(customerLinks),
@@ -33,18 +34,16 @@ describe("resolveIdentity", () => {
 
   it("persists signals and links them to the new customer", async () => {
     const tx = makeTx();
-    tx.identitySignal.findMany
-      .mockResolvedValueOnce([])               // tier loop: no existing match
-      .mockResolvedValueOnce([{ id: "sig_001" }]); // fetch back after createMany
 
     await resolveIdentity(tx as never, signals);
 
-    expect(tx.identitySignal.createMany).toHaveBeenCalledWith({
-      data: [{ type: "email", value: "jane@example.com" }],
-      skipDuplicates: true,
+    expect(tx.identitySignal.upsert).toHaveBeenCalledWith({
+      where: { type_value: { type: "email", value: "jane@example.com" } },
+      create: { type: "email", value: "jane@example.com" },
+      update: {},
     });
     expect(tx.customerSignal.createMany).toHaveBeenCalledWith({
-      data: [{ signalId: "sig_001", customerId: "cust_new" }],
+      data: [{ signalId: "sig_new", customerId: "cust_new" }],
     });
   });
 

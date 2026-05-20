@@ -9,6 +9,7 @@ generator client {
 
 model Customer {
   id              String           @id @default(cuid())
+  deletedAt       DateTime?
   events          CustomerEvent[]
   customerSignals CustomerSignal[]
 }

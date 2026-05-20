@@ -55,18 +55,18 @@ async function mergeIntoCanonical(tx: TxClient, canonical: string, absorbed: str
 async function createCustomerWithSignals(tx: TxClient, signals: RawSignal[]): Promise<string> {
   const customer = await tx.customer.create({ data: {} });
 
-  await tx.identitySignal.createMany({
-    data: signals.map((s) => ({ type: s.type, value: s.value })),
-    skipDuplicates: true,
-  });
-
-  const created = await tx.identitySignal.findMany({
-    where: { OR: signals.map((s) => ({ type: s.type, value: s.value })) },
-    select: { id: true },
-  });
+  const upsertedSignals = await Promise.all(
+    signals.map((s) =>
+      tx.identitySignal.upsert({
+        where: { type_value: { type: s.type, value: s.value } },
+        create: { type: s.type, value: s.value },
+        update: {},
+      })
+    )
+  );
 
   await tx.customerSignal.createMany({
-    data: created.map((s) => ({ signalId: s.id, customerId: customer.id })),
+    data: upsertedSignals.map((s) => ({ signalId: s.id, customerId: customer.id })),
   });
 
   return customer.id;
