@@ -1,8 +1,10 @@
 
 export type SignalType =
     | "mindbody_client_id"
+    | "shopify_customer_id"
     | "phone"
     | "email"
+    | "device_id"
 
 export interface RawSignal {
     type: SignalType;

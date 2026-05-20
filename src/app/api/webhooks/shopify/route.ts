@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ShopifyOrderPayload } from "@/types";
+import { RawSignal, ShopifyOrderPayload } from "@/types";
 import { ingestEvent } from "@/lib/ingest";
 
 export async function POST(req: NextRequest) {
@@ -15,11 +15,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
+  const signals: RawSignal[] = [];
+  if (body.shopify_customer_id) signals.push({ type: "shopify_customer_id", value: body.shopify_customer_id });
+  if (body.email) signals.push({ type: "email", value: body.email });
+  if (body.phone) signals.push({ type: "phone", value: body.phone });
+  if (body.device_id) signals.push({ type: "device_id", value: body.device_id });
+
   try {
-    await ingestEvent([], {
+    await ingestEvent(signals, {
       externalId: body.id,
-      source: "mindbody",
-      type: "booking.created",
+      source: "shopify",
+      type: "order.created",
       payload: body,
       occurredAt: new Date(body.created_at),
     });

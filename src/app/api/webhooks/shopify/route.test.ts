@@ -69,4 +69,17 @@ describe("POST /api/webhooks/mindbody", () => {
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ received: true });
   });
+
+  it("passes all four signals to ingestEvent", async () => {
+    await POST(makeRequest(validPayload));
+    expect(ingestEvent).toHaveBeenCalledWith(
+      [
+        { type: "shopify_customer_id", value: "cust_shopify_001" },
+        { type: "email", value: "jane.doe@example.com" },
+        { type: "phone", value: "+61412345678" },
+        { type: "device_id", value: "device_abc123" },
+      ],
+      expect.objectContaining({ externalId: "shopify_order_001", source: "shopify" }),
+    );
+  });
 });
