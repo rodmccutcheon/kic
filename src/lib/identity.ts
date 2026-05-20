@@ -4,7 +4,48 @@ import { RawSignal, SIGNAL_PRECEDENCE, SignalType } from "@/types";
 type TxClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 
 export async function resolveIdentity(tx: TxClient, signals: RawSignal[]): Promise<string> {
-  return (await findExistingCustomer(tx, signals)) ?? await createCustomerWithSignals(tx, signals);
+  const existing = await findExistingCustomer(tx, signals);
+  if (existing) {
+    await cascadeSweep(tx, existing, signals);
+    return existing;
+  }
+  return createCustomerWithSignals(tx, signals);
+}
+
+async function cascadeSweep(tx: TxClient, canonicalId: string, signals: RawSignal[]): Promise<void> {
+  const upsertedSignals = await Promise.all(
+    signals.map((s) =>
+      tx.identitySignal.upsert({
+        where: { type_value: { type: s.type, value: s.value } },
+        create: { type: s.type, value: s.value },
+        update: {},
+      })
+    )
+  );
+
+  const conflictingLinks = await tx.customerSignal.findMany({
+    where: {
+      signalId: { in: upsertedSignals.map((s) => s.id) },
+      customerId: { not: canonicalId },
+      customer: { deletedAt: null },
+    },
+    select: { customerId: true },
+  });
+
+  const toMerge = [...new Set(conflictingLinks.map((l) => l.customerId))];
+  if (toMerge.length > 0) {
+    await mergeIntoCanonical(tx, canonicalId, toMerge, signals);
+  }
+
+  await Promise.all(
+    upsertedSignals.map((s) =>
+      tx.customerSignal.upsert({
+        where: { customerId_signalId: { customerId: canonicalId, signalId: s.id } },
+        create: { customerId: canonicalId, signalId: s.id },
+        update: {},
+      })
+    )
+  );
 }
 
 async function findExistingCustomer(tx: TxClient, signals: RawSignal[]): Promise<string | null> {

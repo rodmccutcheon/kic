@@ -17,6 +17,7 @@ const makeTx = ({
   customerSignal: {
     findMany: vi.fn().mockResolvedValue(customerLinks),
     createMany: vi.fn().mockResolvedValue({}),
+    upsert: vi.fn().mockResolvedValue({}),
   },
   customerEvent: {
     findMany: vi.fn().mockResolvedValue([]),
@@ -157,6 +158,9 @@ describe("resolveIdentity", () => {
       matchingSignals: [{ id: "sig_001" }],
       customerLinks: [{ customerId: "cust_a" }],
     });
+    tx.customerSignal.findMany
+      .mockResolvedValueOnce([{ customerId: "cust_a" }]) // matchTier: canonical found
+      .mockResolvedValueOnce([]);                         // cascadeSweep: no conflicts (absorbed filtered out)
 
     const id = await resolveIdentity(tx as never, signals);
 
@@ -165,6 +169,32 @@ describe("resolveIdentity", () => {
     expect(tx.customerSignal.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({ customer: { deletedAt: null } }),
+      })
+    );
+  });
+
+  it("cascades a merge when a swept signal already belongs to another customer", async () => {
+    const tx = makeTx({ matchingSignals: [{ id: "sig_phone" }] });
+
+    tx.customerSignal.findMany
+      .mockResolvedValueOnce([{ customerId: "cust_sam" }])   // matchTier: phone → sam
+      .mockResolvedValueOnce([{ customerId: "cust_alex" }])  // cascadeSweep: email already linked to alex
+      .mockResolvedValueOnce([]);                             // mergeIntoCanonical: alex's signals to copy
+
+    tx.identitySignal.upsert
+      .mockResolvedValueOnce({ id: "sig_email" })
+      .mockResolvedValueOnce({ id: "sig_phone" });
+
+    const multiSignals = [
+      { type: "email" as const, value: "alex.kim@example.com" },
+      { type: "phone" as const, value: "+61433000001" },
+    ];
+
+    await resolveIdentity(tx as never, multiSignals);
+
+    expect(tx.mergeRecord.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ canonicalId: "cust_sam", absorbedId: "cust_alex" }),
       })
     );
   });
