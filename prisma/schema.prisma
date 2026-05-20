@@ -7,13 +7,17 @@ generator client {
   provider = "prisma-client-js"
 }
 
+generator erd {
+  provider = "prisma-erd-generator"
+}
+
 model Customer {
-  id              String           @id @default(cuid())
-  deletedAt       DateTime?
-  events          CustomerEvent[]
-  customerSignals CustomerSignal[]
-  mergesAsCanonical MergeRecord[]  @relation("CanonicalMerges")
-  mergesAsAbsorbed  MergeRecord[]  @relation("AbsorbedMerges")
+  id                String           @id @default(cuid())
+  deletedAt         DateTime?
+  events            CustomerEvent[]
+  customerSignals   CustomerSignal[]
+  mergesAsCanonical MergeRecord[]    @relation("CanonicalMerges")
+  mergesAsAbsorbed  MergeRecord[]    @relation("AbsorbedMerges")
 }
 
 model Event {
@@ -51,12 +55,12 @@ model IdentitySignal {
 }
 
 model MergeRecord {
-  id          String   @id @default(cuid())
-  canonicalId String
-  canonical   Customer @relation("CanonicalMerges", fields: [canonicalId], references: [id])
-  absorbedId  String
-  absorbed    Customer @relation("AbsorbedMerges", fields: [absorbedId], references: [id])
-  signals         String   // JSON of incoming signals that triggered the merge
+  id              String   @id @default(cuid())
+  canonicalId     String
+  canonical       Customer @relation("CanonicalMerges", fields: [canonicalId], references: [id])
+  absorbedId      String
+  absorbed        Customer @relation("AbsorbedMerges", fields: [absorbedId], references: [id])
+  signals         String // JSON of incoming signals that triggered the merge
   copiedSignalIds String   @default("[]") // JSON array of signalIds copied to canonical
   copiedEventIds  String   @default("[]") // JSON array of eventIds copied to canonical
   confidence      String   @default("deterministic") // "deterministic" | "probabilistic"
