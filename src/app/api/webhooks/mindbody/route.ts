@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import {MindbodyBookingPayload} from "@/types";
+import {MindbodyBookingPayload, RawSignal} from "@/types";
+import {resolveIdentity} from "@/lib/identity";
 
 export async function POST(req: NextRequest) {
   let body: MindbodyBookingPayload;
@@ -13,6 +14,14 @@ export async function POST(req: NextRequest) {
   if (!body.id || !body.mindbody_client_id || !body.scheduled_at) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
+
+  const signals: RawSignal[] = [
+    { type: "mindbody_client_id", value: body.mindbody_client_id },
+  ];
+  if (body.client_email) signals.push({ type: "email", value: body.client_email });
+  if (body.phone) signals.push({ type: "phone", value: body.phone });
+
+  await resolveIdentity(signals);
 
   return NextResponse.json({ received: true });
 }

@@ -1,6 +1,11 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import {NextRequest} from "next/server";
 import {POST} from "./route";
+import { resolveIdentity } from "@/lib/identity";
+
+vi.mock("@/lib/identity", () => ({
+  resolveIdentity: vi.fn().mockResolvedValue("customer_123"),
+}));
 
 const validPayload = {
   id: "mb_booking_001",
@@ -55,5 +60,14 @@ describe("POST /api/webhooks/mindbody", () => {
     const res = await POST(makeRequest(validPayload));
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ received: true });
+  });
+
+  it("passes all three signals to resolveIdentity", async () => {
+    await POST(makeRequest(validPayload));
+    expect(resolveIdentity).toHaveBeenCalledWith([
+      { type: "mindbody_client_id", value: "mb_client_001" },
+      { type: "email", value: "jane.doe@gmail.com" },
+      { type: "phone", value: "+61412345678" },
+    ]);
   });
 });
