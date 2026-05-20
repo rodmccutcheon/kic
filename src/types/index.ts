@@ -6,6 +6,13 @@ export type SignalType =
     | "email"
     | "device_id"
 
+export const SIGNAL_PRECEDENCE: SignalType[][] = [
+    ["shopify_customer_id", "mindbody_client_id"],
+    ["phone"],
+    ["email"],
+    ["device_id"],
+];
+
 export interface RawSignal {
     type: SignalType;
     value: string;

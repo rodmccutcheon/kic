@@ -8,8 +8,9 @@ generator client {
 }
 
 model Customer {
-  id     String          @id @default(cuid())
-  events CustomerEvent[]
+  id              String           @id @default(cuid())
+  events          CustomerEvent[]
+  customerSignals CustomerSignal[]
 }
 
 model Event {
@@ -31,4 +32,27 @@ model CustomerEvent {
   createdAt  DateTime @default(now())
 
   @@id([customerId, eventId])
+}
+
+model IdentitySignal {
+  id              String           @id @default(cuid())
+  type            String // "email" | "phone" | "device_id" | "shopify_customer_id" | "mindbody_client_id"
+  value           String
+  confidence      String           @default("deterministic") // "deterministic" | "probabilistic"
+  expiresAt       DateTime? // set for short-lived signals e.g. fbclid, gclid
+  createdAt       DateTime         @default(now())
+  customerSignals CustomerSignal[]
+
+  @@unique([type, value])
+  @@index([value])
+}
+
+model CustomerSignal {
+  customerId String
+  customer   Customer       @relation(fields: [customerId], references: [id])
+  signalId   String
+  signal     IdentitySignal @relation(fields: [signalId], references: [id])
+  createdAt  DateTime       @default(now())
+
+  @@id([customerId, signalId])
 }

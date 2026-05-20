@@ -1,9 +1,28 @@
 import { prisma } from "./db";
-import { RawSignal } from "@/types";
+import { RawSignal, SIGNAL_PRECEDENCE, SignalType } from "@/types";
 
 type TxClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 
 export async function resolveIdentity(tx: TxClient, signals: RawSignal[]): Promise<string> {
+  for (const tier of SIGNAL_PRECEDENCE) {
+    const tierSignals = signals.filter((s) => tier.includes(s.type as SignalType));
+    if (tierSignals.length === 0) continue;
+
+    const matchingSignals = await tx.identitySignal.findMany({
+      where: { OR: tierSignals.map((s) => ({ type: s.type, value: s.value })) },
+      select: { id: true },
+    });
+    if (matchingSignals.length === 0) continue;
+
+    const customerLink = await tx.customerSignal.findFirst({
+      where: { signalId: { in: matchingSignals.map((s) => s.id) } },
+      select: { customerId: true },
+    });
+    if (!customerLink) continue;
+
+    return customerLink.customerId;
+  }
+
   return (await tx.customer.create({ data: {} })).id;
 }
 
