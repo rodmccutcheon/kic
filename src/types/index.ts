@@ -9,6 +9,14 @@ export interface RawSignal {
     value: string;
 }
 
+export interface EventDescriptor {
+    externalId: string;
+    source: string;
+    type: string;
+    payload: unknown;
+    occurredAt: Date;
+}
+
 export interface MindbodyBookingPayload {
     id: string;
     mindbody_client_id: string;

@@ -1,10 +1,10 @@
 import { describe, it, expect, vi } from "vitest";
 import {NextRequest} from "next/server";
 import {POST} from "./route";
-import { resolveIdentity } from "@/lib/identity";
+import { ingestEvent } from "@/lib/ingest";
 
-vi.mock("@/lib/identity", () => ({
-  resolveIdentity: vi.fn().mockResolvedValue("customer_123"),
+vi.mock("@/lib/ingest", () => ({
+  ingestEvent: vi.fn(),
 }));
 
 const validPayload = {
@@ -56,8 +56,8 @@ describe("POST /api/webhooks/mindbody", () => {
     expect(res.status).toBe(400);
   });
 
-  it("returns 500 when resolveIdentity throws", async () => {
-    vi.mocked(resolveIdentity).mockRejectedValueOnce(new Error("DB error"));
+  it("returns 500 when ingestEvent throws", async () => {
+    vi.mocked(ingestEvent).mockRejectedValueOnce(new Error("DB error"));
     const res = await POST(makeRequest(validPayload));
     expect(res.status).toBe(500);
     expect(await res.json()).toMatchObject({ error: "Internal server error" });
@@ -69,30 +69,39 @@ describe("POST /api/webhooks/mindbody", () => {
     expect(await res.json()).toEqual({ received: true });
   });
 
-  it("passes all three signals to resolveIdentity", async () => {
+  it("passes all three signals to ingestEvent", async () => {
     await POST(makeRequest(validPayload));
-    expect(resolveIdentity).toHaveBeenCalledWith([
-      { type: "mindbody_client_id", value: "mb_client_001" },
-      { type: "email", value: "jane.doe@gmail.com" },
-      { type: "phone", value: "+61412345678" },
-    ]);
+    expect(ingestEvent).toHaveBeenCalledWith(
+      [
+        { type: "mindbody_client_id", value: "mb_client_001" },
+        { type: "email", value: "jane.doe@gmail.com" },
+        { type: "phone", value: "+61412345678" },
+      ],
+      expect.objectContaining({ externalId: "mb_booking_001", source: "mindbody" }),
+    );
   });
 
   it("omits email signal when client_email is absent", async () => {
     const { client_email: _, ...noEmail } = validPayload;
     await POST(makeRequest(noEmail));
-    expect(resolveIdentity).toHaveBeenCalledWith([
-      { type: "mindbody_client_id", value: "mb_client_001" },
-      { type: "phone", value: "+61412345678" },
-    ]);
+    expect(ingestEvent).toHaveBeenCalledWith(
+      [
+        { type: "mindbody_client_id", value: "mb_client_001" },
+        { type: "phone", value: "+61412345678" },
+      ],
+      expect.objectContaining({ externalId: "mb_booking_001", source: "mindbody" }),
+    );
   });
 
   it("omits phone signal when phone is absent", async () => {
     const { phone: _, ...noPhone } = validPayload;
     await POST(makeRequest(noPhone));
-    expect(resolveIdentity).toHaveBeenCalledWith([
-      { type: "mindbody_client_id", value: "mb_client_001" },
-      { type: "email", value: "jane.doe@gmail.com" },
-    ]);
+    expect(ingestEvent).toHaveBeenCalledWith(
+      [
+        { type: "mindbody_client_id", value: "mb_client_001" },
+        { type: "email", value: "jane.doe@gmail.com" },
+      ],
+      expect.objectContaining({ externalId: "mb_booking_001", source: "mindbody" }),
+    );
   });
 });

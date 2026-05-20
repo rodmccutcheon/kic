@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import {MindbodyBookingPayload, RawSignal} from "@/types";
-import {resolveIdentity} from "@/lib/identity";
+import {ingestEvent} from "@/lib/ingest";
 
 export async function POST(req: NextRequest) {
   let body: MindbodyBookingPayload;
@@ -22,8 +22,14 @@ export async function POST(req: NextRequest) {
   if (body.phone) signals.push({ type: "phone", value: body.phone });
 
   try {
-    await resolveIdentity(signals);
-  } catch (err) {
+    await ingestEvent(signals, {
+      externalId: body.id,
+      source: "mindbody",
+      type: "booking.created",
+      payload: body,
+      occurredAt: new Date(body.scheduled_at),
+    });
+  } catch {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 
