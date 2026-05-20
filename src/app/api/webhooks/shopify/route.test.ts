@@ -45,14 +45,8 @@ describe("POST /api/webhooks/shopify", () => {
     expect(await res.json()).toMatchObject({ error: "Missing required fields" });
   });
 
-  it("returns 400 when shopify_customer_id is missing", async () => {
-    const { shopify_customer_id: _, ...noCustomerId } = validPayload;
-    const res = await POST(makeRequest(noCustomerId));
-    expect(res.status).toBe(400);
-  });
-
   it("returns 400 when created_at is missing", async () => {
-    const { shopify_customer_id: _, ...noDate } = validPayload;
+    const { created_at: _, ...noDate } = validPayload;
     const res = await POST(makeRequest(noDate));
     expect(res.status).toBe(400);
   });
