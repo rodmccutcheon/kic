@@ -11,3 +11,12 @@ model Customer {
   id String @id @default(cuid())
 }
 
+model Event {
+  id         String   @id @default(cuid())
+  source     String // "shopify" | "mindbody"
+  type       String // "order.created" | "booking.created"
+  externalId String   @unique
+  payload    String // raw JSON
+  occurredAt DateTime
+  createdAt  DateTime @default(now())
+}
