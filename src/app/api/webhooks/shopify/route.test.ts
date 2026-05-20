@@ -26,9 +26,9 @@ function makeRequest(body: unknown) {
   });
 }
 
-describe("POST /api/webhooks/mindbody", () => {
+describe("POST /api/webhooks/shopify", () => {
   it("returns 400 when body is not valid JSON", async () => {
-    const req = new NextRequest("http://localhost/api/webhooks/mindbody", {
+    const req = new NextRequest("http://localhost/api/webhooks/shopify", {
       method: "POST",
       body: "not-json",
       headers: {"Content-Type": "application/json"},
