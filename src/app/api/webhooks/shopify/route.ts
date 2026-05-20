@@ -15,8 +15,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
-  const signals: RawSignal[] = [];
-  if (body.shopify_customer_id) signals.push({ type: "shopify_customer_id", value: body.shopify_customer_id });
+  const signals: RawSignal[] = [
+    { type: "shopify_customer_id", value: body.shopify_customer_id },
+  ];
   if (body.email) signals.push({ type: "email", value: body.email });
   if (body.phone) signals.push({ type: "phone", value: body.phone });
   if (body.device_id) signals.push({ type: "device_id", value: body.device_id });
