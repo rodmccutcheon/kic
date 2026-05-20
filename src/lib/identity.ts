@@ -20,7 +20,7 @@ export async function resolveIdentity(tx: TxClient, signals: RawSignal[]): Promi
     });
     if (customerLinks.length === 0) continue;
 
-    const customerIds = [...new Set(customerLinks.map((l) => l.customerId))];
+    const customerIds = [...new Set(customerLinks.map((l) => l.customerId))].sort();
     return customerIds[0];
   }
 

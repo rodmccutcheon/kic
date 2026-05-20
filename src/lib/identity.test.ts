@@ -59,6 +59,18 @@ describe("resolveIdentity", () => {
     expect(id).toBe("cust_existing");
   });
 
+  it("merges and returns a canonical id when two signals match different customers", async () => {
+    const tx = makeTx({
+      matchingSignals: [{ id: "sig_001" }, { id: "sig_002" }],
+      customerLinks: [{ customerId: "cust_b" }, { customerId: "cust_a" }],
+    });
+
+    const id = await resolveIdentity(tx as never, signals);
+
+    expect(id).toBe("cust_a"); // sorted: canonical is alphabetically first
+    expect(tx.customer.create).not.toHaveBeenCalled();
+  });
+
   it("returns one id when two signals match the same customer", async () => {
     const tx = makeTx({
       matchingSignals: [{ id: "sig_001" }, { id: "sig_002" }],
