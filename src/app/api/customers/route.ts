@@ -52,10 +52,11 @@ export async function GET(req: NextRequest) {
   }
 
   return NextResponse.json({
-    ...customer,
+    id: customer.id,
     signals: customer.customerSignals.map((cs) => cs.signal),
     events: customer.events
-        .map((ce) => ce.event)
-        .sort((a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime()),
+      .map((ce) => ce.event)
+      .sort((a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime()),
+    merges: customer.mergesAsCanonical,
   });
 }
