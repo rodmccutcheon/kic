@@ -1,6 +1,9 @@
+import { prisma } from "./db";
 import { RawSignal } from "@/types";
 
-export async function resolveIdentity(signals: RawSignal[]): Promise<string> {
-  return Promise.resolve("customer_123");
+type TxClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+
+export async function resolveIdentity(tx: TxClient, signals: RawSignal[]): Promise<string> {
+  return (await tx.customer.create({ data: {} })).id;
 }
 

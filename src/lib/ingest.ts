@@ -1,5 +1,5 @@
 import { prisma } from "./db";
-import {EventDescriptor, RawSignal} from "@/types";
+import { EventDescriptor, RawSignal } from "@/types";
 import { resolveIdentity } from "./identity";
 
 export async function ingestEvent(signals: RawSignal[], descriptor: EventDescriptor): Promise<void> {
