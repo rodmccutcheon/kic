@@ -23,6 +23,22 @@ export async function resolveIdentity(tx: TxClient, signals: RawSignal[]): Promi
     return customerLink.customerId;
   }
 
-  return (await tx.customer.create({ data: {} })).id;
+  const customer = await tx.customer.create({ data: {} });
+
+  await tx.identitySignal.createMany({
+    data: signals.map((s) => ({ type: s.type, value: s.value })),
+    skipDuplicates: true,
+  });
+
+  const created = await tx.identitySignal.findMany({
+    where: { OR: signals.map((s) => ({ type: s.type, value: s.value })) },
+    select: { id: true },
+  });
+
+  await tx.customerSignal.createMany({
+    data: created.map((s) => ({ signalId: s.id, customerId: customer.id })),
+  });
+
+  return customer.id;
 }
 
