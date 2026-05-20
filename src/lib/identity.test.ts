@@ -7,6 +7,7 @@ const makeTx = ({
 } = {}) => ({
   customer: {
     create: vi.fn().mockResolvedValue({ id: "cust_new" }),
+    updateMany: vi.fn().mockResolvedValue({}),
   },
   identitySignal: {
     findMany: vi.fn().mockResolvedValue(matchingSignals),
@@ -81,6 +82,20 @@ describe("resolveIdentity", () => {
 
     expect(tx.customerSignal.createMany).toHaveBeenCalledWith({
       data: [{ signalId: "sig_b_001", customerId: "cust_a" }],
+    });
+  });
+
+  it("soft-deletes the absorbed customer after merging", async () => {
+    const tx = makeTx({ matchingSignals: [{ id: "sig_001" }] });
+    tx.customerSignal.findMany
+      .mockResolvedValueOnce([{ customerId: "cust_b" }, { customerId: "cust_a" }])
+      .mockResolvedValueOnce([]);
+
+    await resolveIdentity(tx as never, signals);
+
+    expect(tx.customer.updateMany).toHaveBeenCalledWith({
+      where: { id: { in: ["cust_b"] } },
+      data: { deletedAt: expect.any(Date) },
     });
   });
 

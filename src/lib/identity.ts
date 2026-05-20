@@ -45,6 +45,11 @@ async function mergeIntoCanonical(tx: TxClient, canonical: string, absorbed: str
   await tx.customerSignal.createMany({
     data: signalsToLink.map((s) => ({ signalId: s.signalId, customerId: canonical })),
   });
+
+  await tx.customer.updateMany({
+    where: { id: { in: absorbed } },
+    data: { deletedAt: new Date() },
+  });
 }
 
 async function createCustomerWithSignals(tx: TxClient, signals: RawSignal[]): Promise<string> {
