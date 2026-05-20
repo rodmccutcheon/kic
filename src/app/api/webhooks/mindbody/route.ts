@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import {MindbodyBookingPayload, RawSignal} from "@/types";
-import {ingestEvent} from "@/lib/ingest";
+import { MindbodyBookingPayload, RawSignal } from "@/types";
+import { ingestEvent } from "@/lib/ingest";
+import { toE164 } from "@/lib/util/phone";
 
 export async function POST(req: NextRequest) {
   let body: MindbodyBookingPayload;
@@ -18,8 +19,9 @@ export async function POST(req: NextRequest) {
   const signals: RawSignal[] = [
     { type: "mindbody_client_id", value: body.mindbody_client_id },
   ];
-  if (body.client_email) signals.push({ type: "email", value: body.client_email });
-  if (body.phone) signals.push({ type: "phone", value: body.phone });
+  if (body.client_email) signals.push({ type: "email", value: body.client_email.trim().toLowerCase() });
+  const phone = body.phone ? toE164(body.phone) : null;
+  if (phone) signals.push({ type: "phone", value: phone });
 
   try {
     await ingestEvent(signals, {
