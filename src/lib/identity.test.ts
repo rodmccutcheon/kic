@@ -18,6 +18,9 @@ const makeTx = ({
     findMany: vi.fn().mockResolvedValue(customerLinks),
     createMany: vi.fn().mockResolvedValue({}),
   },
+  mergeRecord: {
+    create: vi.fn().mockResolvedValue({}),
+  },
 });
 
 const signals = [{ type: "email" as const, value: "jane@example.com" }];
@@ -95,6 +98,24 @@ describe("resolveIdentity", () => {
     expect(tx.customer.updateMany).toHaveBeenCalledWith({
       where: { id: { in: ["cust_b"] } },
       data: { deletedAt: expect.any(Date) },
+    });
+  });
+
+  it("creates a MergeRecord when two customers are merged", async () => {
+    const tx = makeTx({ matchingSignals: [{ id: "sig_001" }] });
+    tx.customerSignal.findMany
+      .mockResolvedValueOnce([{ customerId: "cust_b" }, { customerId: "cust_a" }])
+      .mockResolvedValueOnce([]);
+
+    await resolveIdentity(tx as never, signals);
+
+    expect(tx.mergeRecord.create).toHaveBeenCalledWith({
+      data: {
+        canonicalId: "cust_a",
+        absorbedId: "cust_b",
+        signals: JSON.stringify(signals),
+        confidence: "deterministic",
+      },
     });
   });
 

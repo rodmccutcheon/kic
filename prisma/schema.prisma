@@ -12,6 +12,8 @@ model Customer {
   deletedAt       DateTime?
   events          CustomerEvent[]
   customerSignals CustomerSignal[]
+  mergesAsCanonical MergeRecord[]  @relation("CanonicalMerges")
+  mergesAsAbsorbed  MergeRecord[]  @relation("AbsorbedMerges")
 }
 
 model Event {
@@ -46,6 +48,17 @@ model IdentitySignal {
 
   @@unique([type, value])
   @@index([value])
+}
+
+model MergeRecord {
+  id          String   @id @default(cuid())
+  canonicalId String
+  canonical   Customer @relation("CanonicalMerges", fields: [canonicalId], references: [id])
+  absorbedId  String
+  absorbed    Customer @relation("AbsorbedMerges", fields: [absorbedId], references: [id])
+  signals     String   // JSON of incoming signals that triggered the merge
+  confidence  String   @default("deterministic") // "deterministic" | "probabilistic"
+  createdAt   DateTime @default(now())
 }
 
 model CustomerSignal {
