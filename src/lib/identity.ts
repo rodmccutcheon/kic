@@ -26,7 +26,7 @@ async function matchTier(tx: TxClient, signals: RawSignal[], tier: SignalType[])
   if (matchingSignals.length === 0) return null;
 
   const customerLinks = await tx.customerSignal.findMany({
-    where: { signalId: { in: matchingSignals.map((s) => s.id) } },
+    where: { signalId: { in: matchingSignals.map((s) => s.id) }, customer: { deletedAt: null } },
     select: { customerId: true },
   });
   if (customerLinks.length === 0) return null;

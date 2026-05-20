@@ -151,4 +151,21 @@ describe("resolveIdentity", () => {
     expect(id).toBe("cust_a");
     expect(tx.customer.create).not.toHaveBeenCalled();
   });
+
+  it("does not re-merge an already-absorbed customer", async () => {
+    const tx = makeTx({
+      matchingSignals: [{ id: "sig_001" }],
+      customerLinks: [{ customerId: "cust_a" }],
+    });
+
+    const id = await resolveIdentity(tx as never, signals);
+
+    expect(id).toBe("cust_a");
+    expect(tx.mergeRecord.create).not.toHaveBeenCalled();
+    expect(tx.customerSignal.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ customer: { deletedAt: null } }),
+      })
+    );
+  });
 });
