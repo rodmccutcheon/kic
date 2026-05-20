@@ -50,4 +50,10 @@ describe("POST /api/webhooks/mindbody", () => {
     const res = await POST(makeRequest(noDate));
     expect(res.status).toBe(400);
   });
+
+  it("returns 200 and received:true for a valid payload", async () => {
+    const res = await POST(makeRequest(validPayload));
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ received: true });
+  });
 });
