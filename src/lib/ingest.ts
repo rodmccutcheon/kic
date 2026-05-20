@@ -4,6 +4,9 @@ import { resolveIdentity } from "./identity";
 
 export async function ingestEvent(signals: RawSignal[], descriptor: EventDescriptor): Promise<void> {
   await prisma.$transaction(async (tx) => {
+    const existing = await tx.event.findUnique({ where: { externalId: descriptor.externalId } });
+    if (existing) return;
+
     const customerId = await resolveIdentity(signals);
 
     const event = await tx.event.create({

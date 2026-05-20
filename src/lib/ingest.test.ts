@@ -2,10 +2,11 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import { ingestEvent } from "./ingest";
 import { EventDescriptor, RawSignal } from "@/types";
 
-const { mockCreate, mockUpsert } = vi.hoisted(() => {
+const { mockFindUnique, mockCreate, mockUpsert } = vi.hoisted(() => {
+  const mockFindUnique = vi.fn().mockResolvedValue(null);
   const mockCreate = vi.fn().mockResolvedValue({ id: "evt_001" });
   const mockUpsert = vi.fn().mockResolvedValue({});
-  return { mockCreate, mockUpsert };
+  return { mockFindUnique, mockCreate, mockUpsert };
 });
 
 vi.mock("./identity", () => ({
@@ -16,10 +17,10 @@ vi.mock("./db", () => ({
   prisma: {
     $transaction: vi.fn().mockImplementation(
       (cb: (tx: {
-        event: { create: typeof mockCreate };
+        event: { findUnique: typeof mockFindUnique; create: typeof mockCreate };
         customerEvent: { upsert: typeof mockUpsert };
       }) => Promise<void>) =>
-        cb({ event: { create: mockCreate }, customerEvent: { upsert: mockUpsert } }),
+        cb({ event: { findUnique: mockFindUnique, create: mockCreate }, customerEvent: { upsert: mockUpsert } }),
     ),
   },
 }));
@@ -59,5 +60,14 @@ describe("ingestEvent", () => {
       create: { customerId: "cust_001", eventId: "evt_001" },
       update: {},
     });
+  });
+
+  it("no-op if the event already exists", async () => {
+    mockFindUnique.mockResolvedValueOnce({ id: "evt_001" });
+
+    await ingestEvent(signals, descriptor);
+
+    expect(mockCreate).not.toHaveBeenCalled();
+    expect(mockUpsert).not.toHaveBeenCalled();
   });
 });
