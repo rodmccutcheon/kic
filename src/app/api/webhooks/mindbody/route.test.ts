@@ -77,4 +77,22 @@ describe("POST /api/webhooks/mindbody", () => {
       { type: "phone", value: "+61412345678" },
     ]);
   });
+
+  it("omits email signal when client_email is absent", async () => {
+    const { client_email: _, ...noEmail } = validPayload;
+    await POST(makeRequest(noEmail));
+    expect(resolveIdentity).toHaveBeenCalledWith([
+      { type: "mindbody_client_id", value: "mb_client_001" },
+      { type: "phone", value: "+61412345678" },
+    ]);
+  });
+
+  it("omits phone signal when phone is absent", async () => {
+    const { phone: _, ...noPhone } = validPayload;
+    await POST(makeRequest(noPhone));
+    expect(resolveIdentity).toHaveBeenCalledWith([
+      { type: "mindbody_client_id", value: "mb_client_001" },
+      { type: "email", value: "jane.doe@gmail.com" },
+    ]);
+  });
 });
