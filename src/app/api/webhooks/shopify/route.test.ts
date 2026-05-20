@@ -63,4 +63,10 @@ describe("POST /api/webhooks/mindbody", () => {
     expect(res.status).toBe(500);
     expect(await res.json()).toMatchObject({ error: "Internal server error" });
   });
+
+  it("returns 200 and received:true for a valid payload", async () => {
+    const res = await POST(makeRequest(validPayload));
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ received: true });
+  });
 });
