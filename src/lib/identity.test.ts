@@ -3,7 +3,7 @@ import { resolveIdentity } from "./identity";
 
 const makeTx = ({
   matchingSignals = [] as { id: string }[],
-  customerLink = null as { customerId: string } | null,
+  customerLinks = [] as { customerId: string }[],
 } = {}) => ({
   customer: {
     create: vi.fn().mockResolvedValue({ id: "cust_new" }),
@@ -13,7 +13,7 @@ const makeTx = ({
     createMany: vi.fn().mockResolvedValue({}),
   },
   customerSignal: {
-    findFirst: vi.fn().mockResolvedValue(customerLink),
+    findMany: vi.fn().mockResolvedValue(customerLinks),
     createMany: vi.fn().mockResolvedValue({}),
   },
 });
@@ -50,12 +50,24 @@ describe("resolveIdentity", () => {
   it("returns the existing customer id when a signal matches", async () => {
     const tx = makeTx({
       matchingSignals: [{ id: "sig_001" }],
-      customerLink: { customerId: "cust_existing" },
+      customerLinks: [{ customerId: "cust_existing" }],
     });
 
     const id = await resolveIdentity(tx as never, signals);
 
     expect(tx.customer.create).not.toHaveBeenCalled();
     expect(id).toBe("cust_existing");
+  });
+
+  it("returns one id when two signals match the same customer", async () => {
+    const tx = makeTx({
+      matchingSignals: [{ id: "sig_001" }, { id: "sig_002" }],
+      customerLinks: [{ customerId: "cust_a" }, { customerId: "cust_a" }],
+    });
+
+    const id = await resolveIdentity(tx as never, signals);
+
+    expect(id).toBe("cust_a");
+    expect(tx.customer.create).not.toHaveBeenCalled();
   });
 });

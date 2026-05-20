@@ -14,13 +14,14 @@ export async function resolveIdentity(tx: TxClient, signals: RawSignal[]): Promi
     });
     if (matchingSignals.length === 0) continue;
 
-    const customerLink = await tx.customerSignal.findFirst({
+    const customerLinks = await tx.customerSignal.findMany({
       where: { signalId: { in: matchingSignals.map((s) => s.id) } },
       select: { customerId: true },
     });
-    if (!customerLink) continue;
+    if (customerLinks.length === 0) continue;
 
-    return customerLink.customerId;
+    const customerIds = [...new Set(customerLinks.map((l) => l.customerId))];
+    return customerIds[0];
   }
 
   const customer = await tx.customer.create({ data: {} });
