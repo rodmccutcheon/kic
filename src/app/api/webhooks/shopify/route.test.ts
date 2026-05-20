@@ -1,6 +1,11 @@
-import { describe, expect, it } from "vitest";
+import {describe, expect, it, vi} from "vitest";
 import { NextRequest } from "next/server";
 import { POST } from "./route";
+import { ingestEvent } from "@/lib/ingest";
+
+vi.mock("@/lib/ingest", () => ({
+  ingestEvent: vi.fn(),
+}));
 
 const validPayload = {
   id: "shopify_order_001",
@@ -50,5 +55,12 @@ describe("POST /api/webhooks/mindbody", () => {
     const { shopify_customer_id: _, ...noDate } = validPayload;
     const res = await POST(makeRequest(noDate));
     expect(res.status).toBe(400);
+  });
+
+  it("returns 500 when ingestEvent throws", async () => {
+    vi.mocked(ingestEvent).mockRejectedValueOnce(new Error("DB error"));
+    const res = await POST(makeRequest(validPayload));
+    expect(res.status).toBe(500);
+    expect(await res.json()).toMatchObject({ error: "Internal server error" });
   });
 });
