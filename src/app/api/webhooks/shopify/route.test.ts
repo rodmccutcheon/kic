@@ -82,4 +82,43 @@ describe("POST /api/webhooks/mindbody", () => {
       expect.objectContaining({ externalId: "shopify_order_001", source: "shopify" }),
     );
   });
+
+  it("omits email signal when client_email is absent", async () => {
+    const { email: _, ...noEmail } = validPayload;
+    await POST(makeRequest(noEmail));
+    expect(ingestEvent).toHaveBeenCalledWith(
+      [
+        { type: "shopify_customer_id", value: "cust_shopify_001" },
+        { type: "phone", value: "+61412345678" },
+        { type: "device_id", value: "device_abc123" },
+      ],
+      expect.objectContaining({ externalId: "shopify_order_001", source: "shopify" }),
+    );
+  });
+
+  it("omits phone signal when phone is absent", async () => {
+    const { phone: _, ...noPhone } = validPayload;
+    await POST(makeRequest(noPhone));
+    expect(ingestEvent).toHaveBeenCalledWith(
+      [
+        { type: "shopify_customer_id", value: "cust_shopify_001" },
+        { type: "email", value: "jane.doe@example.com" },
+        { type: "device_id", value: "device_abc123" },
+      ],
+      expect.objectContaining({ externalId: "shopify_order_001", source: "shopify" }),
+    );
+  });
+
+  it("omits device_id signal when device_id is absent", async () => {
+    const { device_id: _, ...noDeviceId } = validPayload;
+    await POST(makeRequest(noDeviceId));
+    expect(ingestEvent).toHaveBeenCalledWith(
+      [
+        { type: "shopify_customer_id", value: "cust_shopify_001" },
+        { type: "email", value: "jane.doe@example.com" },
+        { type: "phone", value: "+61412345678" },
+      ],
+      expect.objectContaining({ externalId: "shopify_order_001", source: "shopify" }),
+    );
+  });
 });
