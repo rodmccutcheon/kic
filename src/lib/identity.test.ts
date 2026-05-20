@@ -71,6 +71,19 @@ describe("resolveIdentity", () => {
     expect(tx.customer.create).not.toHaveBeenCalled();
   });
 
+  it("copies the absorbed customer's signals to the canonical on merge", async () => {
+    const tx = makeTx({ matchingSignals: [{ id: "sig_001" }] });
+    tx.customerSignal.findMany
+      .mockResolvedValueOnce([{ customerId: "cust_b" }, { customerId: "cust_a" }]) // tier loop
+      .mockResolvedValueOnce([{ signalId: "sig_b_001" }]);                          // absorbed signals
+
+    await resolveIdentity(tx as never, signals);
+
+    expect(tx.customerSignal.createMany).toHaveBeenCalledWith({
+      data: [{ signalId: "sig_b_001", customerId: "cust_a" }],
+    });
+  });
+
   it("returns one id when two signals match the same customer", async () => {
     const tx = makeTx({
       matchingSignals: [{ id: "sig_001" }, { id: "sig_002" }],

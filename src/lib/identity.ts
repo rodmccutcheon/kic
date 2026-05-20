@@ -32,7 +32,19 @@ async function matchTier(tx: TxClient, signals: RawSignal[], tier: SignalType[])
   if (customerLinks.length === 0) return null;
 
   const customerIds = [...new Set(customerLinks.map((l) => l.customerId))].sort();
+  if (customerIds.length > 1) await mergeIntoCanonical(tx, customerIds[0], customerIds.slice(1));
   return customerIds[0];
+}
+
+async function mergeIntoCanonical(tx: TxClient, canonical: string, absorbed: string[]): Promise<void> {
+  const signalsToLink = await tx.customerSignal.findMany({
+    where: { customerId: { in: absorbed } },
+    select: { signalId: true },
+  });
+
+  await tx.customerSignal.createMany({
+    data: signalsToLink.map((s) => ({ signalId: s.signalId, customerId: canonical })),
+  });
 }
 
 async function createCustomerWithSignals(tx: TxClient, signals: RawSignal[]): Promise<string> {
